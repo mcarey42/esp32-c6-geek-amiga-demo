@@ -2,6 +2,7 @@
 #include "gfx.h"
 #include "gfx3d.h"
 #include <math.h>
+#include <stdbool.h>
 
 static const vec3_t s_cube_verts[8] = {
     {-1,-1,-1}, { 1,-1,-1}, { 1, 1,-1}, {-1, 1,-1},
@@ -29,10 +30,16 @@ static void render(void *ctx, fb_t *fb, uint32_t t)
     world = mat4_mul(world, mat4_rotation_y(rt));
     world = mat4_mul(world, mat4_rotation_x(rt * 0.7f));
 
-    mat4_t proj = mat4_perspective((float)M_PI / 3.0f,
-                                   (float)FB_W / FB_H, 0.1f, 100.0f);
+    /* Perspective is constant — build once on first frame, cache. */
+    static mat4_t s_proj;
+    static bool   s_proj_ready;
+    if (!s_proj_ready) {
+        s_proj = mat4_perspective((float)M_PI / 3.0f,
+                                  (float)FB_W / FB_H, 0.1f, 100.0f);
+        s_proj_ready = true;
+    }
 
-    gfx3d_draw_wireframe(fb, &s_cube, world, proj, fb_rgb565(0, 255, 255));
+    gfx3d_draw_wireframe(fb, &s_cube, world, s_proj, fb_rgb565(0, 255, 255));
 }
 
 const scene_t SCENE_04_CUBE = {
