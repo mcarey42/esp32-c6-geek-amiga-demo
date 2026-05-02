@@ -12,8 +12,24 @@ static const char *TAG = "director";
 #  include <stdlib.h>
 #endif
 
+#ifndef ESP_PLATFORM
+#include <assert.h>
+#endif
+
 void cursor_init(cursor_t *c, const timeline_entry_t *e, int n)
 {
+#ifdef ESP_PLATFORM
+    if (n <= 0) { ESP_LOGE(TAG, "cursor_init: n=%d invalid", n); abort(); }
+    for (int i = 0; i < n; ++i) {
+        if (e[i].duration_ms == 0) {
+            ESP_LOGE(TAG, "cursor_init: entry %d has duration_ms=0", i);
+            abort();
+        }
+    }
+#else
+    assert(n > 0);
+    for (int i = 0; i < n; ++i) assert(e[i].duration_ms > 0);
+#endif
     c->entries = e;
     c->n_entries = n;
     c->idx = 0;
@@ -52,6 +68,10 @@ static void enter_scene(director_state_t *s, const scene_t *sc)
         s->ctx = NULL;
     }
     s->active = sc;
+    if (!sc->render) {
+        ESP_LOGE(TAG, "scene %s missing render", sc->name);
+        abort();
+    }
     if (sc->ctx_size) {
         s->ctx = calloc(1, sc->ctx_size);
         if (!s->ctx) { ESP_LOGE(TAG, "ctx alloc failed for %s", sc->name); abort(); }
@@ -68,11 +88,15 @@ static void director_task(void *arg)
     director_state_t *s = arg;
     enter_scene(s, cursor_current(&s->cursor)->scene);
 
+    TickType_t last_wake = xTaskGetTickCount();
     int64_t prev = esp_timer_get_time();
     for (;;) {
         int64_t now = esp_timer_get_time();
         uint32_t dt = (uint32_t)((now - prev) / 1000);
         prev = now;
+        /* Cap dt: a long stall (SD blocking, etc) shouldn't fast-forward
+         * through scenes the user never saw. */
+        if (dt > 2 * FRAME_INTERVAL_MS) dt = 2 * FRAME_INTERVAL_MS;
 
         const scene_t *want = cursor_current(&s->cursor)->scene;
         if (want != s->active) enter_scene(s, want);
@@ -83,8 +107,9 @@ static void director_task(void *arg)
 
         cursor_advance(&s->cursor, dt);
 
-        TickType_t target = pdMS_TO_TICKS(FRAME_INTERVAL_MS);
-        vTaskDelay(target);
+        /* Fixed-rate pacing: vTaskDelayUntil absorbs render-time jitter so
+         * the average frame interval stays at FRAME_INTERVAL_MS. */
+        vTaskDelayUntil(&last_wake, pdMS_TO_TICKS(FRAME_INTERVAL_MS));
     }
 }
 

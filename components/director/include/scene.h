@@ -5,6 +5,13 @@
 
 typedef struct asset_manifest_s asset_manifest_t;  /* defined later by prefetch */
 
+/* Contract:
+ *   - render MUST be non-NULL.
+ *   - init   MAY be NULL (no per-scene init needed).
+ *   - teardown MAY be NULL.
+ *   - assets MAY be NULL.
+ *   - ctx_size MAY be 0 (no ctx allocated).
+ */
 typedef struct scene_s {
     const char *name;
     uint32_t    est_duration_ms;
