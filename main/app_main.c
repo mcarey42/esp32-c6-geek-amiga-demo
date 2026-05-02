@@ -1,24 +1,37 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
+#include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_log.h"
 #include "lcd_drv.h"
 #include "fb.h"
+#include "gfx.h"
+#include "director.h"
+#include "scene.h"
 
 static const char *TAG = "esp32demo";
+
+static void purple_render(void *ctx, fb_t *fb, uint32_t t)
+{
+    (void)ctx;
+    /* Pulse purple intensity with t, just to prove the loop runs. */
+    uint8_t v = (uint8_t)(128 + 127 * (int)((t / 20) % 2));
+    gfx_clear(fb, fb_rgb565(v, 0, v));
+}
+
+static const scene_t SCENE_PURPLE = {
+    .name = "purple", .est_duration_ms = 5000,
+    .render = purple_render,
+};
+
+static const timeline_entry_t timeline[] = {
+    { .scene = &SCENE_PURPLE, .duration_ms = 5000 },
+};
 
 void app_main(void)
 {
     ESP_LOGI(TAG, "boot");
     ESP_ERROR_CHECK(lcd_drv_init());
     if (fb_init() != 0) abort();
-
-    fb_t *fb = fb_acquire_back();
-    for (int i = 0; i < FB_W * FB_H; ++i) fb->pixels[i] = fb_rgb565(0, 0, 255);
-    ESP_ERROR_CHECK_WITHOUT_ABORT(fb_present());
-
-    ESP_LOGI(TAG, "painted blue via fb");
+    if (director_start(timeline, 1) != 0) abort();
+    ESP_LOGI(TAG, "director running");
     while (1) vTaskDelay(pdMS_TO_TICKS(1000));
 }
