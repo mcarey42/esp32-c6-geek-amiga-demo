@@ -42,7 +42,14 @@ int ring_state_next_evict(const ring_state_t *s, int requested_index)
 /* On the ESP32-C6-GEEK the SD card and LCD share SPI2_HOST (the only
  * general-purpose SPI peripheral on C6). The LCD driver owns the bus
  * initialisation, so here we only attach the SD device to the existing
- * bus rather than calling spi_bus_initialize() ourselves. */
+ * bus rather than calling spi_bus_initialize() ourselves.
+ *
+ * NOTE: this is broken-by-design for actually reading the SD card —
+ * lcd_drv_init() configures MISO=-1 (LCD has no data-out line on this
+ * board), so SD reads will fail until the bus is re-initialised with
+ * full SD pins (MOSI=18, SCLK=19, MISO=20). See the long comment in
+ * prefetch.h for the architectural background and the strategies under
+ * consideration. */
 #define PREFETCH_SPI_HOST   SPI2_HOST
 
 int prefetch_mount_sd(void)
@@ -80,7 +87,7 @@ struct frame_ring_s {
 
 static int load_frame(frame_ring_t *r, int slot, int idx)
 {
-    char path[80];
+    char path[sizeof(r->tmpl) + 16];
     snprintf(path, sizeof(path), r->tmpl, idx);
     FILE *f = fopen(path, "rb");
     if (!f) { ESP_LOGE(TAG, "open %s fail", path); return -1; }
@@ -130,7 +137,9 @@ const void *frame_ring_get(frame_ring_t *r, int idx)
         if (r->resident_idx[i] == idx) { slot_found = i; break; }
     }
     if (slot_found < 0) {
-        /* Evict the slot whose loaded index is furthest from `idx`. */
+        /* Evict the slot whose loaded index is furthest from `idx`.
+         * Empty slots (resident_idx[i] == -1) get a huge abs() distance
+         * and naturally win the eviction race — fills empty slots first. */
         int evict = 0, evict_d = -1;
         for (int i = 0; i < r->capacity; ++i) {
             int d = abs(r->resident_idx[i] - idx);
