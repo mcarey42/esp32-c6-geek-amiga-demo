@@ -47,7 +47,16 @@ target_include_directories(director_host PUBLIC
     ../components/fb/include
     host_shims)
 
-# (Future tasks: similar prefetch_host, scenes_host libs.)
+add_library(scenes_host STATIC
+    ../components/scenes/scene_02_copper_scroller.c)
+target_include_directories(scenes_host PUBLIC
+    ../components/scenes/include
+    ../components/director/include
+    ../components/gfx/include
+    ../components/fb/include
+    host_shims)
+
+# (Future tasks: similar prefetch_host lib.)
 
 # Each test binary is added by later tasks. The smoke test exists from day one.
 add_executable(test_smoke test_smoke.c)
@@ -65,8 +74,12 @@ target_link_libraries(test_gfx3d unity gfx3d_host gfx_host m)
 add_executable(test_director test_director.c)
 target_link_libraries(test_director unity director_host)
 
+add_executable(test_scene_02 test_scene_02.c)
+target_link_libraries(test_scene_02 unity ppm scenes_host gfx_host m)
+
 add_test(NAME smoke COMMAND test_smoke)
 add_test(NAME fb COMMAND test_fb)
 add_test(NAME gfx COMMAND test_gfx)
 add_test(NAME gfx3d COMMAND test_gfx3d)
 add_test(NAME director COMMAND test_director)
+add_test(NAME scene_02 COMMAND test_scene_02)
