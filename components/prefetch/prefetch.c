@@ -40,20 +40,30 @@ int ring_state_next_evict(const ring_state_t *s, int requested_index)
 #ifndef PREFETCH_HOST_TEST
 
 /* On the ESP32-C6-GEEK the SD card and LCD share SPI2_HOST (the only
- * general-purpose SPI peripheral on C6). The LCD driver owns the bus
- * initialisation, so here we only attach the SD device to the existing
- * bus rather than calling spi_bus_initialize() ourselves.
- *
- * NOTE: this is broken-by-design for actually reading the SD card —
- * lcd_drv_init() configures MISO=-1 (LCD has no data-out line on this
- * board), so SD reads will fail until the bus is re-initialised with
- * full SD pins (MOSI=18, SCLK=19, MISO=20). See the long comment in
- * prefetch.h for the architectural background and the strategies under
- * consideration. */
+ * general-purpose SPI peripheral on C6) but use different physical pins.
+ * The Phase-1 strategy (see prefetch.h header comment) is boot-time
+ * pre-load: prefetch owns the SPI bus first with SD pins, reads all
+ * needed assets into RAM, then tears the bus down so lcd_drv_init can
+ * re-initialise it with the LCD pin set. */
 #define PREFETCH_SPI_HOST   SPI2_HOST
+
+static sdmmc_card_t *s_card;
 
 int prefetch_mount_sd(void)
 {
+    spi_bus_config_t bus_cfg = {
+        .mosi_io_num = SD_PIN_CMD,
+        .miso_io_num = SD_PIN_D0,
+        .sclk_io_num = SD_PIN_CLK,
+        .quadwp_io_num = -1,
+        .quadhd_io_num = -1,
+        .max_transfer_sz = 4096,
+    };
+    if (spi_bus_initialize(PREFETCH_SPI_HOST, &bus_cfg, SDSPI_DEFAULT_DMA) != ESP_OK) {
+        ESP_LOGE(TAG, "SD spi_bus_initialize failed");
+        return -1;
+    }
+
     esp_vfs_fat_sdmmc_mount_config_t mount_cfg = {
         .format_if_mount_failed = false,
         .max_files = 5,
@@ -65,14 +75,56 @@ int prefetch_mount_sd(void)
 
     sdmmc_host_t host = SDSPI_HOST_DEFAULT();
     host.slot = PREFETCH_SPI_HOST;
-    sdmmc_card_t *card;
-    if (esp_vfs_fat_sdspi_mount("/sdcard", &host, &slot_cfg, &mount_cfg, &card) != ESP_OK) {
+    if (esp_vfs_fat_sdspi_mount("/sdcard", &host, &slot_cfg, &mount_cfg, &s_card) != ESP_OK) {
         ESP_LOGE(TAG, "SD mount failed");
+        spi_bus_free(PREFETCH_SPI_HOST);
         return -1;
     }
     ESP_LOGI(TAG, "SD mounted (size=%lluMB)",
-             ((uint64_t)card->csd.capacity) * card->csd.sector_size / (1024 * 1024));
+             ((uint64_t)s_card->csd.capacity) * s_card->csd.sector_size / (1024 * 1024));
     return 0;
+}
+
+const void *prefetch_load_all(const char *tmpl, int n_frames, int frame_size)
+{
+    if (n_frames <= 0 || frame_size <= 0) return NULL;
+    size_t total = (size_t)n_frames * (size_t)frame_size;
+    uint8_t *buf = malloc(total);
+    if (!buf) {
+        ESP_LOGE(TAG, "prefetch_load_all: alloc %u bytes failed", (unsigned)total);
+        return NULL;
+    }
+    char path[128];
+    for (int i = 0; i < n_frames; ++i) {
+        snprintf(path, sizeof(path), tmpl, i);
+        FILE *f = fopen(path, "rb");
+        if (!f) {
+            ESP_LOGE(TAG, "prefetch_load_all: open %s failed", path);
+            free(buf);
+            return NULL;
+        }
+        size_t n = fread(buf + (size_t)i * frame_size, 1, frame_size, f);
+        fclose(f);
+        if (n != (size_t)frame_size) {
+            ESP_LOGE(TAG, "prefetch_load_all: short read %s (%u/%d)",
+                     path, (unsigned)n, frame_size);
+            free(buf);
+            return NULL;
+        }
+    }
+    ESP_LOGI(TAG, "prefetch_load_all: %d frames x %d bytes from %s",
+             n_frames, frame_size, tmpl);
+    return buf;
+}
+
+void prefetch_unmount_sd(void)
+{
+    if (s_card) {
+        esp_vfs_fat_sdcard_unmount("/sdcard", s_card);
+        s_card = NULL;
+    }
+    spi_bus_free(PREFETCH_SPI_HOST);
+    ESP_LOGI(TAG, "SD unmounted, SPI2 freed");
 }
 
 struct frame_ring_s {

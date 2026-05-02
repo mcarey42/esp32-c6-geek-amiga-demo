@@ -50,7 +50,8 @@ target_include_directories(director_host PUBLIC
 
 add_library(scenes_host STATIC
     ../components/scenes/scene_02_copper_scroller.c
-    ../components/scenes/scene_04_cube.c)
+    ../components/scenes/scene_04_cube.c
+    ../components/scenes/scene_08_silhouette.c)
 target_include_directories(scenes_host PUBLIC
     ../components/scenes/include
     ../components/director/include
@@ -91,6 +92,9 @@ target_link_libraries(test_scene_04 unity ppm scenes_host gfx3d_host gfx_host m)
 add_executable(test_prefetch test_prefetch.c)
 target_link_libraries(test_prefetch unity prefetch_host)
 
+add_executable(test_scene_08 test_scene_08.c)
+target_link_libraries(test_scene_08 unity ppm scenes_host gfx_host)
+
 add_test(NAME smoke COMMAND test_smoke)
 add_test(NAME fb COMMAND test_fb)
 add_test(NAME gfx COMMAND test_gfx)
@@ -99,3 +103,4 @@ add_test(NAME director COMMAND test_director)
 add_test(NAME scene_02 COMMAND test_scene_02)
 add_test(NAME scene_04 COMMAND test_scene_04)
 add_test(NAME prefetch COMMAND test_prefetch)
+add_test(NAME scene_08 COMMAND test_scene_08)
