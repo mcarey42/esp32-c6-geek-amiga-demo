@@ -30,7 +30,7 @@ typedef enum {
 } transition_kind_t;
 
 typedef struct timeline_entry_s {
-    const scene_t *scene;       /* NULL means "transition" -- Task 9 */
-    int            transition;  /* stores transition_kind_t values */
-    uint32_t       duration_ms;
+    const scene_t    *scene;        /* NULL means "transition" -- Task 9 */
+    transition_kind_t transition;
+    uint32_t          duration_ms;
 } timeline_entry_t;

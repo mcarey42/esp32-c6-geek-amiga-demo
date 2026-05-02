@@ -1,6 +1,7 @@
 #include "unity.h"
 #include "director.h"
 #include "scene.h"
+#include "fb.h"
 
 static const scene_t SCENE_A = { .name = "A", .est_duration_ms = 0 };
 static const scene_t SCENE_B = { .name = "B", .est_duration_ms = 0 };
@@ -102,6 +103,40 @@ void test_cursor_advance_past_full_ring_loops(void) {
     TEST_ASSERT_EQUAL_UINT32(50, c.t_in_scene_ms);
 }
 
+void test_fade_black_at_t0_unchanged(void) {
+    uint16_t pixels[4] = { 0xFFFF, 0x07E0, 0x001F, 0xF800 };
+    fb_t fb = { .pixels = pixels, .w = 2, .h = 2 };
+    transition_fade_black_apply(&fb, 0, 500);
+    /* k=0 -> no change. */
+    TEST_ASSERT_EQUAL_HEX16(0xFFFF, pixels[0]);
+    TEST_ASSERT_EQUAL_HEX16(0x07E0, pixels[1]);
+    TEST_ASSERT_EQUAL_HEX16(0x001F, pixels[2]);
+    TEST_ASSERT_EQUAL_HEX16(0xF800, pixels[3]);
+}
+
+void test_fade_black_at_t_full_all_zero(void) {
+    uint16_t pixels[4] = { 0xFFFF, 0x07E0, 0x001F, 0xF800 };
+    fb_t fb = { .pixels = pixels, .w = 2, .h = 2 };
+    transition_fade_black_apply(&fb, 500, 500);
+    /* k=1 -> all pixels black. */
+    for (int i = 0; i < 4; ++i) TEST_ASSERT_EQUAL_HEX16(0x0000, pixels[i]);
+}
+
+void test_fade_black_clamps_overshoot(void) {
+    uint16_t pixels[1] = { 0xFFFF };
+    fb_t fb = { .pixels = pixels, .w = 1, .h = 1 };
+    transition_fade_black_apply(&fb, 1000, 500);  /* k > 1, should clamp */
+    TEST_ASSERT_EQUAL_HEX16(0x0000, pixels[0]);
+}
+
+void test_fade_black_zero_total_no_op(void) {
+    uint16_t pixels[1] = { 0xABCD };
+    fb_t fb = { .pixels = pixels, .w = 1, .h = 1 };
+    transition_fade_black_apply(&fb, 0, 0);
+    /* No divide-by-zero, no change. */
+    TEST_ASSERT_EQUAL_HEX16(0xABCD, pixels[0]);
+}
+
 int main(void) {
     UNITY_BEGIN();
     RUN_TEST(test_cursor_starts_at_first_entry);
@@ -112,5 +147,9 @@ int main(void) {
     RUN_TEST(test_cursor_advance_exact_boundary_swaps);
     RUN_TEST(test_cursor_advance_multi_scene_in_one_step);
     RUN_TEST(test_cursor_advance_past_full_ring_loops);
+    RUN_TEST(test_fade_black_at_t0_unchanged);
+    RUN_TEST(test_fade_black_at_t_full_all_zero);
+    RUN_TEST(test_fade_black_clamps_overshoot);
+    RUN_TEST(test_fade_black_zero_total_no_op);
     return UNITY_END();
 }

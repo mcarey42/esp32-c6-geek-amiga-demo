@@ -58,6 +58,7 @@ typedef struct {
     cursor_t cursor;
     const scene_t *active;
     void *ctx;
+    uint32_t active_last_t_ms;   /* t we last rendered the active scene with */
 } director_state_t;
 
 static void enter_scene(director_state_t *s, const scene_t *sc)
@@ -81,6 +82,7 @@ static void enter_scene(director_state_t *s, const scene_t *sc)
         abort();
     }
     ESP_LOGI(TAG, "-> scene %s (%u ms)", sc->name, (unsigned)sc->est_duration_ms);
+    s->active_last_t_ms = 0;
 }
 
 static void director_task(void *arg)
@@ -104,7 +106,7 @@ static void director_task(void *arg)
             /* Transition entry -- render a frame of the *previous* scene then darken. */
             fb_t *fb = fb_acquire_back();
             if (s->active && s->active->render)
-                s->active->render(s->ctx, fb, s->cursor.t_in_scene_ms);
+                s->active->render(s->ctx, fb, s->active_last_t_ms);
             if (cur->transition == TRANSITION_FADE_BLACK)
                 transition_fade_black_apply(fb, s->cursor.t_in_scene_ms, cur->duration_ms);
             (void)fb_present();
@@ -112,6 +114,7 @@ static void director_task(void *arg)
             if (cur->scene != s->active) enter_scene(s, cur->scene);
             fb_t *fb = fb_acquire_back();
             s->active->render(s->ctx, fb, s->cursor.t_in_scene_ms);
+            s->active_last_t_ms = s->cursor.t_in_scene_ms;
             (void)fb_present();
         }
 
