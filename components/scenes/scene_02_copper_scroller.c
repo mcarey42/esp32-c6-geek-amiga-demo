@@ -9,10 +9,6 @@
 #define SCROLLER_AMP  6
 #define SCROLLER_TEXT ">>> GREETZ TO SPACEBALLS - SCOOPEX - KEFRENS - SANITY - ANARCHY - FUTURE CREW - TBL <<< "
 
-typedef struct { int dummy; } scene_02_ctx_t;
-
-static int s_init(void *ctx) { (void)ctx; return 0; }
-
 static uint16_t copper_color(int row, uint32_t t)
 {
     /* Rotate hue across rows; cycle slowly with t. */
@@ -38,11 +34,12 @@ static uint16_t copper_color(int row, uint32_t t)
 static void render(void *ctx, fb_t *fb, uint32_t t)
 {
     (void)ctx;
-    /* Bands. */
+    /* Bands. Precompute one color per band, then fan out across rows. */
+    enum { N_BANDS = (FB_H + BAND_H - 1) / BAND_H };
+    uint16_t band_colors[N_BANDS];
+    for (int b = 0; b < N_BANDS; ++b) band_colors[b] = copper_color(b, t);
     for (int y = 0; y < FB_H; ++y) {
-        int band = y / BAND_H;
-        uint16_t c = copper_color(band, t);
-        gfx_hline(fb, 0, y, FB_W, c);
+        gfx_hline(fb, 0, y, FB_W, band_colors[y / BAND_H]);
     }
     /* Black strip behind scroller for legibility. */
     for (int y = SCROLLER_Y - 2; y < SCROLLER_Y + 9; ++y) {
@@ -70,7 +67,5 @@ static void render(void *ctx, fb_t *fb, uint32_t t)
 const scene_t SCENE_02_COPPER_SCROLLER = {
     .name = "copper_scroller",
     .est_duration_ms = 30000,
-    .init = s_init,
     .render = render,
-    .ctx_size = sizeof(scene_02_ctx_t),
 };

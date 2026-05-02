@@ -13,20 +13,22 @@ void setUp(void)    { memset(s_pixels, 0, sizeof(s_pixels)); }
 void tearDown(void) {}
 
 void test_scene_02_renders_distinct_band_rows(void) {
-    void *ctx = calloc(1, SCENE_02_COPPER_SCROLLER.ctx_size);
-    SCENE_02_COPPER_SCROLLER.init(ctx);
+    void *ctx = SCENE_02_COPPER_SCROLLER.ctx_size
+        ? calloc(1, SCENE_02_COPPER_SCROLLER.ctx_size) : NULL;
+    if (SCENE_02_COPPER_SCROLLER.init) SCENE_02_COPPER_SCROLLER.init(ctx);
     SCENE_02_COPPER_SCROLLER.render(ctx, &s_fb, 0);
     /* Sample two rows that should be in different palette bands. */
     uint16_t row5  = s_pixels[5 * FB_W + 100];
     uint16_t row60 = s_pixels[60 * FB_W + 100];
     TEST_ASSERT_NOT_EQUAL(row5, row60);
     if (SCENE_02_COPPER_SCROLLER.teardown) SCENE_02_COPPER_SCROLLER.teardown(ctx);
-    free(ctx);
+    if (ctx) free(ctx);
 }
 
 void test_scene_02_scroller_moves_with_time(void) {
-    void *ctx = calloc(1, SCENE_02_COPPER_SCROLLER.ctx_size);
-    SCENE_02_COPPER_SCROLLER.init(ctx);
+    void *ctx = SCENE_02_COPPER_SCROLLER.ctx_size
+        ? calloc(1, SCENE_02_COPPER_SCROLLER.ctx_size) : NULL;
+    if (SCENE_02_COPPER_SCROLLER.init) SCENE_02_COPPER_SCROLLER.init(ctx);
     SCENE_02_COPPER_SCROLLER.render(ctx, &s_fb, 0);
     ppm_write_rgb565("/tmp/scene_02_t0.ppm", s_pixels, FB_W, FB_H);
 
@@ -45,7 +47,7 @@ void test_scene_02_scroller_moves_with_time(void) {
     TEST_ASSERT_TRUE_MESSAGE(diffs > 10, "scroller band did not move with time");
 
     if (SCENE_02_COPPER_SCROLLER.teardown) SCENE_02_COPPER_SCROLLER.teardown(ctx);
-    free(ctx);
+    if (ctx) free(ctx);
 }
 
 int main(void) {
