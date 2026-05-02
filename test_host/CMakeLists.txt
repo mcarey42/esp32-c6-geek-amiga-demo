@@ -48,11 +48,13 @@ target_include_directories(director_host PUBLIC
     host_shims)
 
 add_library(scenes_host STATIC
-    ../components/scenes/scene_02_copper_scroller.c)
+    ../components/scenes/scene_02_copper_scroller.c
+    ../components/scenes/scene_04_cube.c)
 target_include_directories(scenes_host PUBLIC
     ../components/scenes/include
     ../components/director/include
     ../components/gfx/include
+    ../components/gfx3d/include
     ../components/fb/include
     host_shims)
 
@@ -77,9 +79,13 @@ target_link_libraries(test_director unity director_host)
 add_executable(test_scene_02 test_scene_02.c)
 target_link_libraries(test_scene_02 unity ppm scenes_host gfx_host m)
 
+add_executable(test_scene_04 test_scene_04.c)
+target_link_libraries(test_scene_04 unity ppm scenes_host gfx3d_host gfx_host m)
+
 add_test(NAME smoke COMMAND test_smoke)
 add_test(NAME fb COMMAND test_fb)
 add_test(NAME gfx COMMAND test_gfx)
 add_test(NAME gfx3d COMMAND test_gfx3d)
 add_test(NAME director COMMAND test_director)
 add_test(NAME scene_02 COMMAND test_scene_02)
+add_test(NAME scene_04 COMMAND test_scene_04)

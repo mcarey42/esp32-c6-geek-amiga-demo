@@ -10,7 +10,7 @@
 static const char *TAG = "esp32demo";
 
 static const timeline_entry_t timeline[] = {
-    { .scene = &SCENE_02_COPPER_SCROLLER, .duration_ms = 30000 },
+    { .scene = &SCENE_04_CUBE, .duration_ms = 8000 },
 };
 
 void app_main(void)
