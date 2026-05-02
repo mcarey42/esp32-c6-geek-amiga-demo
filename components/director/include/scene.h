@@ -23,8 +23,14 @@ typedef struct scene_s {
     size_t ctx_size;
 } scene_t;
 
+typedef enum {
+    TRANSITION_NONE = 0,
+    TRANSITION_FADE_BLACK,
+    /* TRANSITION_PALETTE_WARP, TRANSITION_HYPERSPACE -- added in Phase 2 */
+} transition_kind_t;
+
 typedef struct timeline_entry_s {
-    const scene_t *scene;       /* NULL means "transition" — Task 9 */
-    int            transition;  /* unused until Task 9 */
+    const scene_t *scene;       /* NULL means "transition" -- Task 9 */
+    int            transition;  /* stores transition_kind_t values */
     uint32_t       duration_ms;
 } timeline_entry_t;

@@ -16,3 +16,6 @@ const timeline_entry_t *cursor_current(const cursor_t *c);
 
 /* Boots the director task. Returns once the task is running. */
 int  director_start(const timeline_entry_t *entries, int n);
+
+void transition_fade_black_apply(fb_t *fb, uint32_t t_in_transition_ms,
+                                 uint32_t total_ms);

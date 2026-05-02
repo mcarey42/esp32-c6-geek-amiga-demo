@@ -41,7 +41,8 @@ target_include_directories(gfx3d_host PUBLIC
     host_shims)
 
 add_library(director_host STATIC
-    ../components/director/director.c)
+    ../components/director/director.c
+    ../components/director/transitions.c)
 target_include_directories(director_host PUBLIC
     ../components/director/include
     ../components/fb/include

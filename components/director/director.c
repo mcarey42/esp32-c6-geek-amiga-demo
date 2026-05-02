@@ -98,12 +98,22 @@ static void director_task(void *arg)
          * through scenes the user never saw. */
         if (dt > 2 * FRAME_INTERVAL_MS) dt = 2 * FRAME_INTERVAL_MS;
 
-        const scene_t *want = cursor_current(&s->cursor)->scene;
-        if (want != s->active) enter_scene(s, want);
+        const timeline_entry_t *cur = cursor_current(&s->cursor);
 
-        fb_t *fb = fb_acquire_back();
-        s->active->render(s->ctx, fb, s->cursor.t_in_scene_ms);
-        (void)fb_present();
+        if (cur->scene == NULL) {
+            /* Transition entry -- render a frame of the *previous* scene then darken. */
+            fb_t *fb = fb_acquire_back();
+            if (s->active && s->active->render)
+                s->active->render(s->ctx, fb, s->cursor.t_in_scene_ms);
+            if (cur->transition == TRANSITION_FADE_BLACK)
+                transition_fade_black_apply(fb, s->cursor.t_in_scene_ms, cur->duration_ms);
+            (void)fb_present();
+        } else {
+            if (cur->scene != s->active) enter_scene(s, cur->scene);
+            fb_t *fb = fb_acquire_back();
+            s->active->render(s->ctx, fb, s->cursor.t_in_scene_ms);
+            (void)fb_present();
+        }
 
         cursor_advance(&s->cursor, dt);
 
