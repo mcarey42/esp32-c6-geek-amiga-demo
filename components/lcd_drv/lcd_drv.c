@@ -15,6 +15,7 @@ static esp_lcd_panel_handle_t    s_panel;
 
 esp_err_t lcd_drv_init(void)
 {
+    if (s_panel) return ESP_OK;
     gpio_config_t bl_cfg = { .mode = GPIO_MODE_OUTPUT, .pin_bit_mask = 1ULL << LCD_GPIO_BL };
     ESP_ERROR_CHECK(gpio_config(&bl_cfg));
     gpio_set_level(LCD_GPIO_BL, 1);
