@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Generate 60 placeholder silhouette frames as 1-bit packed bitmaps.
-Output: sdcard/silhouettes/frame_NNN.bin, 60x100, 768 bytes each.
+Output: sdcard/silhouettes/frame_NNN.bin, 60x100, 750 bytes each.
 The 'silhouette' is just a bouncing oval — proves the pipeline works
 end-to-end. Real rotoscoped frames replace these in Phase 3."""
 
@@ -12,7 +12,7 @@ OUT_DIR = "sdcard/silhouettes"
 os.makedirs(OUT_DIR, exist_ok=True)
 
 for f in range(FRAMES):
-    bits = bytearray(768)
+    bits = bytearray((W * H + 7) // 8)
     cy = int(50 + 30 * math.sin(2 * math.pi * f / FRAMES))
     cx = 30
     for y in range(H):

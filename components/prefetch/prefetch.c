@@ -89,6 +89,8 @@ const void *prefetch_load_all(const char *tmpl, int n_frames, int frame_size)
 {
     if (n_frames <= 0 || frame_size <= 0) return NULL;
     size_t total = (size_t)n_frames * (size_t)frame_size;
+    /* Intentional leak: caller never frees; this lives for the full demo
+     * run. See prefetch_load_all() doc-comment in the header. */
     uint8_t *buf = malloc(total);
     if (!buf) {
         ESP_LOGE(TAG, "prefetch_load_all: alloc %u bytes failed", (unsigned)total);

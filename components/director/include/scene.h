@@ -11,6 +11,12 @@ typedef struct asset_manifest_s asset_manifest_t;  /* defined later by prefetch 
  *   - teardown MAY be NULL.
  *   - assets MAY be NULL.
  *   - ctx_size MAY be 0 (no ctx allocated).
+ *
+ *   - For boot-time-loaded assets (e.g. SD-streamed bitmaps that can't be
+ *     re-loaded mid-scene because of bus contention), the scene exposes a
+ *     scene_NN_xxx_set_assets(const void *) symbol. app_main loads the
+ *     data and calls the setter BEFORE director_start(). The buffer must
+ *     outlive the demo run. Scene 8 (silhouette) is the canonical example.
  */
 typedef struct scene_s {
     const char *name;
