@@ -27,6 +27,11 @@ target_link_libraries(test_smoke unity)
 add_executable(test_fb test_fb.c)
 target_link_libraries(test_fb unity)
 
+# Add gfx sources to the host build (need the .c, not just headers)
+add_executable(test_gfx test_gfx.c ../components/gfx/gfx.c ../components/gfx/font_5x7.c)
+target_link_libraries(test_gfx unity ppm)
+add_test(NAME gfx COMMAND test_gfx)
+
 enable_testing()
 add_test(NAME smoke COMMAND test_smoke)
 add_test(NAME fb COMMAND test_fb)
