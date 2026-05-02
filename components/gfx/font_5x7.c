@@ -19,5 +19,6 @@ const uint8_t font5x7[96][5] = {
     [33] = {0x7E,0x11,0x11,0x11,0x7E},           /* A */
     [34] = {0x7F,0x49,0x49,0x49,0x36},           /* B */
     /* Fill in the rest of A-Z, a-z, and remaining punctuation as scenes
-       need them. The wildcard '?' (index 31) renders for anything missing. */
+       need them. Unmapped chars fall through to the '?' wildcard at draw
+       time (see gfx_text_5x7's all-zero-glyph check). */
 };

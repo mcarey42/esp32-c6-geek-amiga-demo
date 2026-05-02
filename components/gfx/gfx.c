@@ -63,12 +63,20 @@ void gfx_text_5x7(fb_t *fb, int x, int y, const char *s, uint16_t color)
         unsigned char c = (unsigned char)*s;
         if (c < 32 || c > 127) c = '?';
         const uint8_t *glyph = font5x7[c - 32];
+        /* If the glyph is all-zero AND it isn't ASCII space (32), the font
+         * has no entry for this char — fall back to '?' so missing letters
+         * are visible rather than silently blank. */
+        if (c != ' ' &&
+            glyph[0] == 0 && glyph[1] == 0 && glyph[2] == 0 &&
+            glyph[3] == 0 && glyph[4] == 0) {
+            glyph = font5x7['?' - 32];
+        }
         for (int col = 0; col < 5; ++col) {
             uint8_t bits = glyph[col];
             for (int row = 0; row < 7; ++row) {
                 if (bits & (1 << row)) gfx_pixel(fb, x + col, y + row, color);
             }
         }
-        x += 6;  /* 5 px glyph + 1 px spacing */
+        x += 6;
     }
 }
