@@ -1,0 +1,27 @@
+cmake_minimum_required(VERSION 3.16)
+project(esp32demo_host_tests C)
+
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Werror -O0 -g")
+
+include_directories(
+    unity
+    ../components/fb/include
+    ../components/gfx/include
+    ../components/gfx3d/include
+    ../components/director/include
+    ../components/prefetch/include
+    ../components/scenes/include
+)
+
+add_library(unity STATIC unity/unity.c)
+
+# Helper for snapshot tests
+add_library(ppm STATIC ppm.c)
+
+# Each test binary is added by later tasks. The smoke test exists from day one.
+add_executable(test_smoke test_smoke.c)
+target_link_libraries(test_smoke unity)
+
+enable_testing()
+add_test(NAME smoke COMMAND test_smoke)

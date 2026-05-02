@@ -1,1 +1,4 @@
 .superpowers/
+build/
+sdkconfig
+test_host/build/
