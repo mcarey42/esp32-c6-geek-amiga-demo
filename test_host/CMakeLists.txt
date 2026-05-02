@@ -6,6 +6,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Werror -O0 -g")
 
 include_directories(
     unity
+    host_shims
     ../components/fb/include
     ../components/gfx/include
     ../components/gfx3d/include

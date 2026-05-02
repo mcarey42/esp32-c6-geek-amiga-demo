@@ -17,7 +17,7 @@ void app_main(void)
 
     fb_t *fb = fb_acquire_back();
     for (int i = 0; i < FB_W * FB_H; ++i) fb->pixels[i] = fb_rgb565(0, 0, 255);
-    fb_present();
+    ESP_ERROR_CHECK_WITHOUT_ABORT(fb_present());
 
     ESP_LOGI(TAG, "painted blue via fb");
     while (1) vTaskDelay(pdMS_TO_TICKS(1000));
