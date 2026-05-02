@@ -23,5 +23,9 @@ add_library(ppm STATIC ppm.c)
 add_executable(test_smoke test_smoke.c)
 target_link_libraries(test_smoke unity)
 
+add_executable(test_fb test_fb.c)
+target_link_libraries(test_fb unity)
+
 enable_testing()
 add_test(NAME smoke COMMAND test_smoke)
+add_test(NAME fb COMMAND test_fb)
