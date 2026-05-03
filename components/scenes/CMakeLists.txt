@@ -4,7 +4,13 @@ idf_component_register(
          "scene_03_starfield.c"
          "scene_04_cube.c"
          "scene_05_plasma.c"
+         "scene_06_metaballs.c"
+         "scene_07_rotozoomer.c"
          "scene_08_silhouette.c"
          "scene_08_frames.c"
+         "scene_09_voxel.c"
+         "scene_10_tunnel.c"
+         "scene_11_synthwave.c"
+         "scene_12_credits.c"
     INCLUDE_DIRS "include"
     REQUIRES director gfx gfx3d fb)

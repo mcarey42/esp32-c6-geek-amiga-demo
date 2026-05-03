@@ -1,13 +1,11 @@
 #include "scene.h"
 #include "scenes.h"
 
-/* Phase 1 + Phase 2 (so far) — six scenes, fade between each.
- * Order follows the spec's "tour through time" arc:
- *   Act I  (megademo era):  01 boot/title -> 02 copper -> 03 starfield -> 04 cube
- *   Act II (design era):    05 plasma "breathe" -> 08 silhouette
- *   Act III (beyond):       (more in upcoming Phase 2 work)
+/* Final 12-scene "tour through time" timeline. Total loop ~245s.
  *
- * Total loop ~125s with the current set. */
+ *   Act I  (megademo era):   01 boot/title -> 02 copper -> 03 starfield -> 04 cube
+ *   Act II (design era):     05 plasma -> 06 metaballs -> 07 rotozoomer -> 08 silhouette
+ *   Act III (beyond):        09 voxel -> 10 tunnel -> 11 synthwave -> 12 credits */
 const timeline_entry_t TIMELINE[] = {
     { .scene = &SCENE_01_BOOT_TITLE,       .duration_ms = 12000 },
     { .transition = TRANSITION_FADE_BLACK,                        .duration_ms = 500 },
@@ -19,7 +17,19 @@ const timeline_entry_t TIMELINE[] = {
     { .transition = TRANSITION_FADE_BLACK,                        .duration_ms = 500 },
     { .scene = &SCENE_05_PLASMA,           .duration_ms = 25000 },
     { .transition = TRANSITION_FADE_BLACK,                        .duration_ms = 500 },
-    { .scene = &SCENE_08_SILHOUETTE,       .duration_ms = 30000 },
+    { .scene = &SCENE_06_METABALLS,        .duration_ms = 25000 },
+    { .transition = TRANSITION_FADE_BLACK,                        .duration_ms = 500 },
+    { .scene = &SCENE_07_ROTOZOOMER,       .duration_ms = 20000 },
+    { .transition = TRANSITION_FADE_BLACK,                        .duration_ms = 500 },
+    { .scene = &SCENE_08_SILHOUETTE,       .duration_ms = 20000 },
+    { .transition = TRANSITION_FADE_BLACK,                        .duration_ms = 500 },
+    { .scene = &SCENE_09_VOXEL,            .duration_ms = 25000 },
+    { .transition = TRANSITION_FADE_BLACK,                        .duration_ms = 500 },
+    { .scene = &SCENE_10_TUNNEL,           .duration_ms = 25000 },
+    { .transition = TRANSITION_FADE_BLACK,                        .duration_ms = 500 },
+    { .scene = &SCENE_11_SYNTHWAVE,        .duration_ms = 20000 },
+    { .transition = TRANSITION_FADE_BLACK,                        .duration_ms = 500 },
+    { .scene = &SCENE_12_CREDITS,          .duration_ms = 25000 },
     { .transition = TRANSITION_FADE_BLACK,                        .duration_ms = 500 },
 };
 

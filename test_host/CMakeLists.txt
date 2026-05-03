@@ -54,8 +54,14 @@ add_library(scenes_host STATIC
     ../components/scenes/scene_03_starfield.c
     ../components/scenes/scene_04_cube.c
     ../components/scenes/scene_05_plasma.c
+    ../components/scenes/scene_06_metaballs.c
+    ../components/scenes/scene_07_rotozoomer.c
     ../components/scenes/scene_08_silhouette.c
-    ../components/scenes/scene_08_frames.c)
+    ../components/scenes/scene_08_frames.c
+    ../components/scenes/scene_09_voxel.c
+    ../components/scenes/scene_10_tunnel.c
+    ../components/scenes/scene_11_synthwave.c
+    ../components/scenes/scene_12_credits.c)
 target_include_directories(scenes_host PUBLIC
     ../components/scenes/include
     ../components/director/include
@@ -108,6 +114,24 @@ target_link_libraries(test_scene_03 unity ppm scenes_host gfx3d_host gfx_host m)
 add_executable(test_scene_05 test_scene_05.c)
 target_link_libraries(test_scene_05 unity ppm scenes_host gfx_host m)
 
+add_executable(test_scene_06 test_scene_06.c)
+target_link_libraries(test_scene_06 unity ppm scenes_host gfx_host m)
+
+add_executable(test_scene_07 test_scene_07.c)
+target_link_libraries(test_scene_07 unity ppm scenes_host gfx_host m)
+
+add_executable(test_scene_09 test_scene_09.c)
+target_link_libraries(test_scene_09 unity ppm scenes_host gfx_host m)
+
+add_executable(test_scene_10 test_scene_10.c)
+target_link_libraries(test_scene_10 unity ppm scenes_host gfx_host m)
+
+add_executable(test_scene_11 test_scene_11.c)
+target_link_libraries(test_scene_11 unity ppm scenes_host gfx_host m)
+
+add_executable(test_scene_12 test_scene_12.c)
+target_link_libraries(test_scene_12 unity ppm scenes_host gfx3d_host gfx_host m)
+
 add_test(NAME smoke COMMAND test_smoke)
 add_test(NAME fb COMMAND test_fb)
 add_test(NAME gfx COMMAND test_gfx)
@@ -118,5 +142,11 @@ add_test(NAME scene_02 COMMAND test_scene_02)
 add_test(NAME scene_03 COMMAND test_scene_03)
 add_test(NAME scene_04 COMMAND test_scene_04)
 add_test(NAME scene_05 COMMAND test_scene_05)
+add_test(NAME scene_06 COMMAND test_scene_06)
+add_test(NAME scene_07 COMMAND test_scene_07)
 add_test(NAME prefetch COMMAND test_prefetch)
 add_test(NAME scene_08 COMMAND test_scene_08)
+add_test(NAME scene_09 COMMAND test_scene_09)
+add_test(NAME scene_10 COMMAND test_scene_10)
+add_test(NAME scene_11 COMMAND test_scene_11)
+add_test(NAME scene_12 COMMAND test_scene_12)
