@@ -2,3 +2,4 @@
 build/
 sdkconfig
 test_host/build/
+build_host/
