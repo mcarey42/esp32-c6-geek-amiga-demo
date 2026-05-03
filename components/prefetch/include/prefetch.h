@@ -1,4 +1,6 @@
 #pragma once
+/* Currently unused in Phase 1 (silhouette frames are baked into flash).
+ * Retained for future SD-streamed content. */
 #include <stdint.h>
 #include <stddef.h>
 

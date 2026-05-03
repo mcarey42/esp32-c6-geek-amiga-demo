@@ -51,7 +51,8 @@ target_include_directories(director_host PUBLIC
 add_library(scenes_host STATIC
     ../components/scenes/scene_02_copper_scroller.c
     ../components/scenes/scene_04_cube.c
-    ../components/scenes/scene_08_silhouette.c)
+    ../components/scenes/scene_08_silhouette.c
+    ../components/scenes/scene_08_frames.c)
 target_include_directories(scenes_host PUBLIC
     ../components/scenes/include
     ../components/director/include
