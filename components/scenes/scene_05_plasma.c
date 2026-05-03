@@ -13,9 +13,19 @@
 
 #define LUT_N 256
 
+/* Render the plasma at half resolution, then 2x2-tile out to the
+ * full framebuffer. Cuts per-frame work by 4x — essential because the
+ * per-pixel softfloat-sin math otherwise blows the frame budget on the
+ * no-FPU C6. The radial LUT is sized for the half-res grid. */
+#define PL_W (FB_W / 2)   /* 120 */
+#define PL_H (FB_H / 2)   /* 67  (FB_H=135 is odd; we render 67 rows and let the
+                             tiled output cover y=134; row y=134 is filled by
+                             row 66 of the half-res buffer which falls within
+                             67) */
+
 static float    s_sin_lut[LUT_N];
 static uint16_t s_palette[256];
-static uint8_t  s_radial[FB_H][FB_W];   /* pre-computed sqrt distance LUT */
+static uint8_t  s_radial[PL_H][PL_W];   /* pre-computed sqrt distance LUT (half-res) */
 static bool     s_lut_ready;
 
 static void build_luts(void)
@@ -23,12 +33,11 @@ static void build_luts(void)
     for (int i = 0; i < LUT_N; ++i) {
         s_sin_lut[i] = sinf(2.0f * (float)M_PI * i / (float)LUT_N);
     }
-    int cx = FB_W / 2, cy = FB_H / 2;
-    /* Max possible distance = sqrt((W/2)^2 + (H/2)^2). Quantize to 0..255. */
+    int cx = PL_W / 2, cy = PL_H / 2;
     float max_d = sqrtf((float)(cx * cx + cy * cy));
-    for (int y = 0; y < FB_H; ++y) {
+    for (int y = 0; y < PL_H; ++y) {
         int dy = y - cy;
-        for (int x = 0; x < FB_W; ++x) {
+        for (int x = 0; x < PL_W; ++x) {
             int dx = x - cx;
             float d = sqrtf((float)(dx * dx + dy * dy));
             s_radial[y][x] = (uint8_t)(d / max_d * 255.0f);
@@ -73,22 +82,36 @@ static void render(void *ctx, fb_t *fb, uint32_t t)
     build_palette(t);
 
     float ts = t * 0.001f;
-    /* Per-frame "phase" offsets so we evaluate sine-of-pixel-coord cheaply. */
     float t_a = ts * 1.0f;
     float t_b = ts * 0.7f;
     float t_c = ts * 0.5f;
     float t_d = ts * 0.3f;
 
-    for (int y = 0; y < FB_H; ++y) {
-        for (int x = 0; x < FB_W; ++x) {
-            float v = lut_sin(x * 0.05f + t_a)
-                    + lut_sin(y * 0.06f + t_b)
-                    + lut_sin((x + y) * 0.03f + t_c)
-                    + lut_sin(s_radial[y][x] * 0.04f + t_d);
+    /* Render at half-res into the framebuffer using 2x2 tiles. We compute
+     * the plasma value at (px, py) once and write it to pixels at
+     * (2*px, 2*py), (2*px+1, 2*py), (2*px, 2*py+1), (2*px+1, 2*py+1). */
+    for (int py = 0; py < PL_H; ++py) {
+        int fy = py * 2;
+        for (int px = 0; px < PL_W; ++px) {
+            int fx = px * 2;
+            /* Multiply the per-pixel x/y constants by 2 to keep the visual
+             * scale roughly the same as the old full-res version. */
+            float v = lut_sin(fx * 0.05f + t_a)
+                    + lut_sin(fy * 0.06f + t_b)
+                    + lut_sin((fx + fy) * 0.03f + t_c)
+                    + lut_sin(s_radial[py][px] * 0.04f + t_d);
             int idx = (int)((v + 4.0f) * (256.0f / 8.0f));
             if (idx < 0) idx = 0;
             if (idx > 255) idx = 255;
-            fb->pixels[y * FB_W + x] = s_palette[idx];
+            uint16_t color = s_palette[idx];
+            uint16_t *row0 = &fb->pixels[fy * FB_W + fx];
+            row0[0] = color;
+            if (fx + 1 < FB_W) row0[1] = color;
+            if (fy + 1 < FB_H) {
+                uint16_t *row1 = &fb->pixels[(fy + 1) * FB_W + fx];
+                row1[0] = color;
+                if (fx + 1 < FB_W) row1[1] = color;
+            }
         }
     }
 

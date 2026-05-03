@@ -96,9 +96,11 @@ static void director_task(void *arg)
         int64_t now = esp_timer_get_time();
         uint32_t dt = (uint32_t)((now - prev) / 1000);
         prev = now;
-        /* Cap dt: a long stall (SD blocking, etc) shouldn't fast-forward
-         * through scenes the user never saw. */
-        if (dt > 2 * FRAME_INTERVAL_MS) dt = 2 * FRAME_INTERVAL_MS;
+        /* Cap dt at a generous "this was definitely a stall" threshold.
+         * A scene that legitimately renders at 5 fps (200 ms/frame) still
+         * progresses through its scheduled duration; only multi-second
+         * stalls (e.g. blocked I/O) get clamped to avoid scene fast-forward. */
+        if (dt > 1000) dt = 1000;
 
         const timeline_entry_t *cur = cursor_current(&s->cursor);
 
@@ -120,9 +122,16 @@ static void director_task(void *arg)
 
         cursor_advance(&s->cursor, dt);
 
-        /* Fixed-rate pacing: vTaskDelayUntil absorbs render-time jitter so
-         * the average frame interval stays at FRAME_INTERVAL_MS. */
-        vTaskDelayUntil(&last_wake, pdMS_TO_TICKS(FRAME_INTERVAL_MS));
+        /* Fixed-rate pacing when ahead of schedule; always-yield-1-tick
+         * fallback when behind, so the IDLE task gets to run and the
+         * task watchdog stays happy even under heavy render load. */
+        TickType_t target = last_wake + pdMS_TO_TICKS(FRAME_INTERVAL_MS);
+        if (xTaskGetTickCount() >= target) {
+            last_wake = xTaskGetTickCount();
+            vTaskDelay(1);
+        } else {
+            vTaskDelayUntil(&last_wake, pdMS_TO_TICKS(FRAME_INTERVAL_MS));
+        }
     }
 }
 
