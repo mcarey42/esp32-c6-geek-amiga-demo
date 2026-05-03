@@ -74,19 +74,18 @@ in that component's `CMakeLists.txt`, and one entry in `main/timeline.c`.
 
 ## Building
 
-Requires **ESP-IDF v6.0** (or compatible). The `scripts/activate.sh` shim
-loads IDF v6.0 from `~/.espressif/v6.0/esp-idf` if you installed via
-Espressif's eim tool — adjust to wherever your IDF lives, or just source
-your IDF's own `export.sh` before running `idf.py`.
+For end users: see **[INSTALL.md](INSTALL.md)** — it walks through ESP-IDF
+setup, plugging in the board, and the one-shot `./build-and-flash.sh`
+script that auto-detects your serial port and flashes + monitors in one
+step.
+
+For the impatient with ESP-IDF v5.3+ already set up:
 
 ```bash
-. scripts/activate.sh             # or: . ~/esp/v6.0/esp-idf/export.sh
-idf.py set-target esp32c6
-idf.py build
-idf.py -p /dev/ttyACM0 flash monitor
+git clone https://github.com/mcarey42/esp32-c6-geek-amiga-demo.git
+cd esp32-c6-geek-amiga-demo
+./build-and-flash.sh
 ```
-
-Plug in the board over USB-C, hit reset, watch the show.
 
 ## Testing
 
@@ -133,6 +132,8 @@ breed art, not limit it.
 
 ## License
 
-Code: MIT (or whatever you prefer — this repo doesn't yet declare one).
-The Adafruit GFX-derived 5×7 font in `components/gfx/font_5x7.c` is
-BSD-2-Clause; attribution is in that file's header.
+MIT — see [LICENSE](LICENSE).
+
+The 5×7 bitmap font in `components/gfx/font_5x7.c` is derived from the
+Adafruit GFX Library and is BSD-2-Clause; attribution is in that file's
+header.

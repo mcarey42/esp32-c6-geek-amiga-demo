@@ -1,0 +1,103 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+    tags: ['v*', 'phase-*']
+  pull_request:
+    branches: [master, main]
+
+permissions:
+  contents: write   # needed for the release job to upload artifacts
+
+jobs:
+  host-tests:
+    name: Host tests (Unity)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cmake build-essential
+
+      - name: Run host test suite
+        run: |
+          ./test_host/run.sh
+
+      - name: Upload PPM snapshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ppm-snapshots
+          path: /tmp/scene_*.ppm
+          if-no-files-found: ignore
+
+  firmware:
+    name: Firmware build (ESP32-C6)
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ github.ref_name }}
+      REPO_SLUG:   ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build firmware via espressif/esp-idf-ci-action
+        uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: v5.3.2
+          target: esp32c6
+          path: '.'
+
+      - name: Stage release artifacts
+        run: |
+          mkdir -p artifacts
+          cp build/esp32demo.bin artifacts/
+          cp build/bootloader/bootloader.bin artifacts/
+          cp build/partition_table/partition-table.bin artifacts/
+          # Bundle a flash-args file so the user can flash with esptool
+          # directly without needing the original build tree.
+          cp build/flash_args artifacts/flash_args 2>/dev/null || true
+          ls -la artifacts/
+
+      - name: Upload firmware artifacts (every build)
+        uses: actions/upload-artifact@v4
+        with:
+          name: esp32demo-firmware-${{ github.sha }}
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Compose release notes (tag pushes only)
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          # RELEASE_TAG and REPO_SLUG come in via env: above so they are
+          # never spliced directly into a shell command — protects against
+          # any tag name containing shell metacharacters.
+          {
+            printf 'Automated firmware build for `%s`.\n\n' "$RELEASE_TAG"
+            printf '## Flashing a pre-built binary\n\n'
+            printf 'Install `esptool` (`pip install esptool`), then with the ESP32-C6-Geek plugged in:\n\n'
+            printf '```bash\n'
+            printf 'esptool --chip esp32c6 \\\n'
+            printf '  --before default-reset --after hard-reset \\\n'
+            printf '  write-flash --flash-mode dio --flash-size 16MB --flash-freq 80m \\\n'
+            printf '  0x0      bootloader.bin \\\n'
+            printf '  0x8000   partition-table.bin \\\n'
+            printf '  0x10000  esp32demo.bin\n'
+            printf '```\n\n'
+            printf 'Or build from source -- see https://github.com/%s/blob/master/INSTALL.md\n' "$REPO_SLUG"
+          } > release-notes.md
+          cat release-notes.md
+
+      - name: Attach firmware to GitHub Release (tag pushes only)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/esp32demo.bin
+            artifacts/bootloader.bin
+            artifacts/partition-table.bin
+          body_path: release-notes.md
+          generate_release_notes: true
