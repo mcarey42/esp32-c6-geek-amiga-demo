@@ -115,7 +115,7 @@ add_executable(test_scene_05 test_scene_05.c)
 target_link_libraries(test_scene_05 unity ppm scenes_host gfx_host m)
 
 add_executable(test_scene_06 test_scene_06.c)
-target_link_libraries(test_scene_06 unity ppm scenes_host gfx_host m)
+target_link_libraries(test_scene_06 unity ppm scenes_host gfx3d_host gfx_host m)
 
 add_executable(test_scene_07 test_scene_07.c)
 target_link_libraries(test_scene_07 unity ppm scenes_host gfx_host m)

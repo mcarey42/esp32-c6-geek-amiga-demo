@@ -57,6 +57,72 @@ void gfx_rect(fb_t *fb, int x, int y, int w, int h, uint16_t color)
     gfx_vline(fb, x + w - 1, y,         h, color);
 }
 
+/* Per-pixel RGB565 alpha blend. alpha 0..255 (255 = opaque src). */
+static inline uint16_t blend565(uint16_t dst, uint16_t src, uint8_t alpha)
+{
+    if (alpha >= 255) return src;
+    if (alpha == 0)   return dst;
+    uint16_t ia = 255 - alpha;
+    uint8_t dr = (dst >> 11) & 0x1F;
+    uint8_t dg = (dst >> 5)  & 0x3F;
+    uint8_t db =  dst        & 0x1F;
+    uint8_t sr = (src >> 11) & 0x1F;
+    uint8_t sg = (src >> 5)  & 0x3F;
+    uint8_t sb =  src        & 0x1F;
+    uint8_t r = (uint8_t)((sr * alpha + dr * ia) >> 8);
+    uint8_t g = (uint8_t)((sg * alpha + dg * ia) >> 8);
+    uint8_t b = (uint8_t)((sb * alpha + db * ia) >> 8);
+    return (uint16_t)((r << 11) | (g << 5) | b);
+}
+
+static void blend_hline(fb_t *fb, int xa, int xb, int y, uint16_t color, uint8_t alpha)
+{
+    if ((unsigned)y >= (unsigned)fb->h) return;
+    if (xa > xb) { int t = xa; xa = xb; xb = t; }
+    if (xa < 0) xa = 0;
+    if (xb >= fb->w) xb = fb->w - 1;
+    uint16_t *p = &fb->pixels[y * fb->w + xa];
+    for (int x = xa; x <= xb; ++x, ++p) *p = blend565(*p, color, alpha);
+}
+
+void gfx_tri_filled_alpha(fb_t *fb,
+                          int x0, int y0,
+                          int x1, int y1,
+                          int x2, int y2,
+                          uint16_t color, uint8_t alpha)
+{
+    if (alpha == 0) return;
+    /* Sort vertices ascending in y. */
+    if (y0 > y1) { int t=y0;y0=y1;y1=t; t=x0;x0=x1;x1=t; }
+    if (y0 > y2) { int t=y0;y0=y2;y2=t; t=x0;x0=x2;x2=t; }
+    if (y1 > y2) { int t=y1;y1=y2;y2=t; t=x1;x1=x2;x2=t; }
+
+    if (y2 == y0) {
+        /* Degenerate flat tri. */
+        int xmin = x0 < x1 ? x0 : x1; if (x2 < xmin) xmin = x2;
+        int xmax = x0 > x1 ? x0 : x1; if (x2 > xmax) xmax = x2;
+        blend_hline(fb, xmin, xmax, y0, color, alpha);
+        return;
+    }
+
+    /* For each scanline y in [y0..y2], compute long-edge x and the
+     * relevant short-edge x; fill between them with alpha blend. */
+    for (int y = y0; y <= y2; ++y) {
+        if (y < 0) continue;
+        if (y >= fb->h) break;
+        int xa = x0 + (x2 - x0) * (y - y0) / (y2 - y0);
+        int xb;
+        if (y < y1) {
+            if (y1 == y0) xb = x0;
+            else xb = x0 + (x1 - x0) * (y - y0) / (y1 - y0);
+        } else {
+            if (y2 == y1) xb = x1;
+            else xb = x1 + (x2 - x1) * (y - y1) / (y2 - y1);
+        }
+        blend_hline(fb, xa, xb, y, color, alpha);
+    }
+}
+
 void gfx_text_5x7(fb_t *fb, int x, int y, const char *s, uint16_t color)
 {
     for (; *s; ++s) {

@@ -80,6 +80,39 @@ void test_text_renders_some_pixels(void) {
     ppm_write_rgb565("/tmp/test_text_A.ppm", s_pixels, FB_W, FB_H);
 }
 
+void test_tri_filled_alpha_opaque_fills_interior(void) {
+    /* Solid triangle (alpha=255) over a black bg should write color
+     * for every pixel in the rough interior. */
+    gfx_tri_filled_alpha(&s_fb, 10, 10, 30, 10, 20, 30, 0xF800, 255);
+    /* Apex pixel + a midpoint inside the triangle. */
+    TEST_ASSERT_EQUAL_HEX16(0xF800, s_pixels[10 * FB_W + 20]);  /* top edge midpoint */
+    TEST_ASSERT_EQUAL_HEX16(0xF800, s_pixels[20 * FB_W + 20]);  /* well inside */
+    /* A pixel clearly outside the triangle should remain bg. */
+    TEST_ASSERT_EQUAL_HEX16(0, s_pixels[20 * FB_W + 50]);
+}
+
+void test_tri_filled_alpha_blends(void) {
+    /* Pre-fill with white; draw a black triangle at alpha=128. Result
+     * inside the triangle should be roughly mid-gray. */
+    gfx_clear(&s_fb, 0xFFFF);
+    gfx_tri_filled_alpha(&s_fb, 0, 0, 60, 0, 30, 60, 0x0000, 128);
+    uint16_t mid = s_pixels[10 * FB_W + 30];
+    /* Mid-gray in 565: r ~= 16, g ~= 32, b ~= 16 -> 0x8410. Allow some slack. */
+    uint8_t r = (mid >> 11) & 0x1F;
+    uint8_t g = (mid >> 5)  & 0x3F;
+    uint8_t b =  mid        & 0x1F;
+    TEST_ASSERT_TRUE_MESSAGE(r > 8  && r < 24, "red in mid-gray range");
+    TEST_ASSERT_TRUE_MESSAGE(g > 16 && g < 48, "green in mid-gray range");
+    TEST_ASSERT_TRUE_MESSAGE(b > 8  && b < 24, "blue in mid-gray range");
+}
+
+void test_tri_filled_alpha_zero_is_noop(void) {
+    gfx_clear(&s_fb, 0xABCD);
+    gfx_tri_filled_alpha(&s_fb, 0, 0, 60, 0, 30, 60, 0xF800, 0);
+    /* Must not have changed anything. */
+    TEST_ASSERT_EQUAL_HEX16(0xABCD, s_pixels[10 * FB_W + 30]);
+}
+
 int main(void) {
     UNITY_BEGIN();
     RUN_TEST(test_clear_fills_all_pixels);
@@ -91,5 +124,8 @@ int main(void) {
     RUN_TEST(test_line_diagonal_endpoints);
     RUN_TEST(test_rect_outline_only);
     RUN_TEST(test_text_renders_some_pixels);
+    RUN_TEST(test_tri_filled_alpha_opaque_fills_interior);
+    RUN_TEST(test_tri_filled_alpha_blends);
+    RUN_TEST(test_tri_filled_alpha_zero_is_noop);
     return UNITY_END();
 }
