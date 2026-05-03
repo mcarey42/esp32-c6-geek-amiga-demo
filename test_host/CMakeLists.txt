@@ -49,8 +49,11 @@ target_include_directories(director_host PUBLIC
     host_shims)
 
 add_library(scenes_host STATIC
+    ../components/scenes/scene_01_boot_title.c
     ../components/scenes/scene_02_copper_scroller.c
+    ../components/scenes/scene_03_starfield.c
     ../components/scenes/scene_04_cube.c
+    ../components/scenes/scene_05_plasma.c
     ../components/scenes/scene_08_silhouette.c
     ../components/scenes/scene_08_frames.c)
 target_include_directories(scenes_host PUBLIC
@@ -96,12 +99,24 @@ target_link_libraries(test_prefetch unity prefetch_host)
 add_executable(test_scene_08 test_scene_08.c)
 target_link_libraries(test_scene_08 unity ppm scenes_host gfx_host)
 
+add_executable(test_scene_01 test_scene_01.c)
+target_link_libraries(test_scene_01 unity ppm scenes_host gfx_host m)
+
+add_executable(test_scene_03 test_scene_03.c)
+target_link_libraries(test_scene_03 unity ppm scenes_host gfx3d_host gfx_host m)
+
+add_executable(test_scene_05 test_scene_05.c)
+target_link_libraries(test_scene_05 unity ppm scenes_host gfx_host m)
+
 add_test(NAME smoke COMMAND test_smoke)
 add_test(NAME fb COMMAND test_fb)
 add_test(NAME gfx COMMAND test_gfx)
 add_test(NAME gfx3d COMMAND test_gfx3d)
 add_test(NAME director COMMAND test_director)
+add_test(NAME scene_01 COMMAND test_scene_01)
 add_test(NAME scene_02 COMMAND test_scene_02)
+add_test(NAME scene_03 COMMAND test_scene_03)
 add_test(NAME scene_04 COMMAND test_scene_04)
+add_test(NAME scene_05 COMMAND test_scene_05)
 add_test(NAME prefetch COMMAND test_prefetch)
 add_test(NAME scene_08 COMMAND test_scene_08)
