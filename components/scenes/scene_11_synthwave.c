@@ -70,6 +70,7 @@ static void render(void *ctx, fb_t *fb, uint32_t t)
         gfx_line(fb, top_x, HORIZON_Y, bot_x, FB_H - 1, fb_rgb565(255, 80, 200));
     }
 
+    /* (Fade from white at the end — see below.) */
     /* "2026" chrome-ish text floating above the sun. */
     const char *year = "2026";
     int year_w = (int)strlen(year) * 6;
@@ -83,6 +84,22 @@ static void render(void *ctx, fb_t *fb, uint32_t t)
     gfx_text_5x7(fb, yx + 6 + 2, yy + 2, year, fb_rgb565(0, 0, 30));
     gfx_text_5x7(fb, yx + 6 + 1, yy + 1, year, fb_rgb565(0, 220, 255));
     gfx_text_5x7(fb, yx + 6,     yy,     year, fb_rgb565(255, 255, 255));
+
+    /* LIGHT_BURST diegetic transition: fade from white in the first 500ms
+     * so Scene 10's exit-into-light visually delivers us here. */
+    if (t < 500) {
+        int k_q = (int)((float)(500 - t) / 500.0f * 32.0f);
+        for (int i = 0; i < fb->w * fb->h; ++i) {
+            uint16_t p = fb->pixels[i];
+            uint8_t r = (p >> 11) & 0x1F;
+            uint8_t g = (p >> 5)  & 0x3F;
+            uint8_t b = (p)       & 0x1F;
+            r = (uint8_t)(r + (31 - r) * k_q / 32);
+            g = (uint8_t)(g + (63 - g) * k_q / 32);
+            b = (uint8_t)(b + (31 - b) * k_q / 32);
+            fb->pixels[i] = (uint16_t)((r << 11) | (g << 5) | b);
+        }
+    }
 }
 
 const scene_t SCENE_11_SYNTHWAVE = {

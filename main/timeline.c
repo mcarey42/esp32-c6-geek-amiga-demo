@@ -12,8 +12,9 @@ const timeline_entry_t TIMELINE[] = {
     { .scene = &SCENE_02_COPPER_SCROLLER,  .duration_ms = 25000 },
     { .transition = TRANSITION_FADE_BLACK,                        .duration_ms = 500 },
     { .scene = &SCENE_03_STARFIELD,        .duration_ms = 18000 },
-    { .transition = TRANSITION_FADE_BLACK,                        .duration_ms = 500 },
-    { .scene = &SCENE_04_CUBE,             .duration_ms = 8000 },
+    /* HYPERSPACE: scene 03 ends in white flash, scene 04 fades in from
+     * white. No FADE_BLACK between them — the white delivers us. */
+    { .scene = &SCENE_04_CUBE,             .duration_ms = 45000 },
     { .transition = TRANSITION_FADE_BLACK,                        .duration_ms = 500 },
     { .scene = &SCENE_05_PLASMA,           .duration_ms = 25000 },
     { .transition = TRANSITION_FADE_BLACK,                        .duration_ms = 500 },
@@ -26,7 +27,8 @@ const timeline_entry_t TIMELINE[] = {
     { .scene = &SCENE_09_VOXEL,            .duration_ms = 25000 },
     { .transition = TRANSITION_FADE_BLACK,                        .duration_ms = 500 },
     { .scene = &SCENE_10_TUNNEL,           .duration_ms = 25000 },
-    { .transition = TRANSITION_FADE_BLACK,                        .duration_ms = 500 },
+    /* LIGHT_BURST: scene 10 exits into light, scene 11 fades in from
+     * white. No FADE_BLACK — the white delivers us into the synthwave. */
     { .scene = &SCENE_11_SYNTHWAVE,        .duration_ms = 20000 },
     { .transition = TRANSITION_FADE_BLACK,                        .duration_ms = 500 },
     { .scene = &SCENE_12_CREDITS,          .duration_ms = 25000 },
